@@ -1,4 +1,5 @@
 const router = require("express").Router();
+const jwt = require('jsonwebtoken');
 
 // ℹ️ Handles password encryption
 const bcrypt = require("bcrypt");
@@ -13,13 +14,14 @@ const User = require("../models/User.model");
 // Require necessary (isLoggedOut and isLiggedIn) middleware in order to control access to specific routes
 const isLoggedOut = require("../middleware/isLoggedOut");
 const isLoggedIn = require("../middleware/isLoggedIn");
+const {isAuthenticated} = require ("../middleware/jwt.middleware")
 
 router.get("/loggedin", (req, res) => {
   res.json(req.user);
 });
 
 router.post("/signup", isLoggedOut, (req, res) => {
-  const { username, password } = req.body;
+  const {email, username, password } = req.body;
 
   if (!username) {
     return res
@@ -33,6 +35,14 @@ router.post("/signup", isLoggedOut, (req, res) => {
     });
   }
 
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  if (!emailRegex.test(email)) {
+    res.status(400).json({ message: 'Provide a valid email address.' });
+    return;
+  }
+
+ 
+
   //   ! This use case is using a regular expression to control for special characters and min length
   /*
   const regex = /(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}/;
@@ -44,6 +54,14 @@ router.post("/signup", isLoggedOut, (req, res) => {
     });
   }
   */
+  User.findOne({ email })
+    .then((foundUser) => {
+      // If the user with the same email already exists, send an error response
+      if (foundUser) {
+        res.status(400).json({ message: "User already exists." });
+        return;
+      }
+    });
 
   // Search the database for a user with the username submitted in the form
   User.findOne({ username }).then((found) => {
@@ -83,7 +101,7 @@ router.post("/signup", isLoggedOut, (req, res) => {
   });
 });
 
-router.post("/login", isLoggedOut, (req, res, next) => {
+router.post("/login", (req, res, next) => {
   const { username, password } = req.body;
 
   if (!username) {
@@ -112,10 +130,19 @@ router.post("/login", isLoggedOut, (req, res, next) => {
       bcrypt.compare(password, user.password).then((isSamePassword) => {
         if (!isSamePassword) {
           return res.status(400).json({ errorMessage: "Wrong credentials." });
-        }
-        req.session.user = user;
-        // req.session.user = user._id; // ! better and safer but in this case we saving the entire user object
-        return res.json(user);
+        };
+
+        const payload = {
+          _id: user._id,
+          username: user.username,
+        };
+
+        const authToken = jwt.sign( 
+          payload,
+          process.env.TOKEN_SECRET,
+          { algorithm: 'HS256', expiresIn: "6h" }
+        );
+        return res.json({ authToken: authToken });
       });
     })
 
@@ -127,13 +154,9 @@ router.post("/login", isLoggedOut, (req, res, next) => {
     });
 });
 
-router.get("/logout", isLoggedIn, (req, res) => {
-  req.session.destroy((err) => {
-    if (err) {
-      return res.status(500).json({ errorMessage: err.message });
-    }
-    res.json({ message: "Done" });
-  });
+router.get('/verify', isAuthenticated, (req, res, next) => {
+  console.log(`req.payload`, req.payload);
+  res.status(200).json(req.payload);
 });
 
 module.exports = router;

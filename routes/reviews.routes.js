@@ -1,5 +1,7 @@
 const router = require("express").Router();
 const Reviews = require("../models/Review.Model");
+const Product = require("../models/Product.Model");
+const {isAuthenticated} = require ("../middleware/jwt.middleware")
 //GET ALl REVIEWS
 router.get("/", (req, res) => {
   Reviews.find()
@@ -13,7 +15,7 @@ router.get("/", (req, res) => {
     });
 });
 //CREATE A REVIEW
-router.post("/",(req, res) => {
+router.post("/", isAuthenticated, (req, res) => {
     const body = req.body;
     const reviewDetails = {
       reviewer: body.reviewer,
@@ -21,7 +23,14 @@ router.post("/",(req, res) => {
       description: body.description
     };
     Reviews.create(reviewDetails)
-      .then((createdReview) => res.status(201).json(createdReview))
+      .then((review)=>{
+        return Product.findByIdAndUpdate(productId, {
+          $push: { reviews: review._id}
+        });
+      })
+      .then((createdReview) => {
+        res.status(201).json(createdReview)
+      })
       .catch((err) => {
         console.log("Error creating a new review", err);
         res.status(500).json({

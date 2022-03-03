@@ -1,6 +1,7 @@
 const router = require("express").Router();
 const Products = require("../models/Product.Model");
 const mongoose = require("mongoose");
+const {isAuthenticated} = require ("../middleware/jwt.middleware")
 
 //GET ALL PRODUCTS
 router.get("/", (req, res) => {
@@ -16,7 +17,7 @@ router.get("/", (req, res) => {
     });
 });
 //CREATE NEW PRODUCT
-router.post("/",(req, res) => {
+router.post("/", isAuthenticated, (req, res) => {
     const body = req.body;
     const productDetails = {
       name: body.name,
@@ -39,15 +40,13 @@ router.post("/",(req, res) => {
   });
 //GET ONE PRODUCT
 router.get("/:productId", (req, res) => {
-  const { id } = req.params;
-
-  // isIdValid(id, res);
-  if (!mongoose.Types.ObjectId.isValid(id)) {
+  const { productId } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(productId)) {
     res.status(400).json({ message: "Specified id is not valid" });
     return;
   }
 
-  Products.findById(id)
+  Products.findById(productId)
     .populate("reviews")
     .then((product) => res.status(200).json(product))
     .catch((err) => {
@@ -59,12 +58,12 @@ router.get("/:productId", (req, res) => {
     });
 });
 // UPDATE PRODUCT
-router.put("/:productId",
+router.put("/:productId", isAuthenticated,
   (req, res) => {
-    const { id } = req.params;
+    const { productId } = req.params;
     const body = req.body;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    if (!mongoose.Types.ObjectId.isValid(productId)) {
       res.status(400).json({ message: "Specified id is not valid" });
       return;
     }
@@ -78,7 +77,7 @@ router.put("/:productId",
       description: body.description,
     };
 
-    Products.findByIdAndUpdate(id, productDetails, { new: true })
+    Products.findByIdAndUpdate(productId, productDetails, { new: true })
       .then((updatedProduct) => res.json(updatedProduct))
       .catch((err) => {
         console.log("Error updating product", err);
@@ -89,17 +88,17 @@ router.put("/:productId",
       });
   });
 
-router.delete("/:productId",
+router.delete("/:productId", isAuthenticated,
   (req, res) => {
-    const { id } = req.params;
+    const { productId } = req.params;
     
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    if (!mongoose.Types.ObjectId.isValid(productId)) {
       res.status(400).json({ message: "Specified id is not valid" });
       return;
     }
 
-    Products.findByIdAndRemove(id)
-      .then()
+    Products.findByIdAndRemove(productId)
+      .then(() => res.json({ message: `Project with ${productId} is removed successfully.` }))
       .catch((err) => {
         console.log("Error deleting product", err);
         res.status(500).json({
