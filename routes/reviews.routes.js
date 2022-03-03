@@ -1,6 +1,7 @@
 const router = require("express").Router();
 const Reviews = require("../models/Review.Model");
 const Product = require("../models/Product.Model");
+const User = require("../models/User.model");
 const {isAuthenticated} = require ("../middleware/jwt.middleware")
 //GET ALl REVIEWS
 router.get("/", (req, res) => {
@@ -15,10 +16,11 @@ router.get("/", (req, res) => {
     });
 });
 //CREATE A REVIEW
-router.post("/", isAuthenticated, (req, res) => {
+router.post("/:productId", isAuthenticated, (req, res) => {
+    const { productId } = req.params;
     const body = req.body;
     const reviewDetails = {
-      reviewer: body.reviewer,
+      reviewer: req.payload.username,
       score: body.score,
       description: body.description
     };
