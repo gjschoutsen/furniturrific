@@ -2,6 +2,7 @@ const router = require("express").Router();
 const Products = require("../models/Product.Model");
 const mongoose = require("mongoose");
 const { isAuthenticated } = require("../middleware/jwt.middleware");
+const { isAdmin } = require("../middleware/isAdmin.middleware");
 
 //GET ALL PRODUCTS
 router.get("/", (req, res) => {
@@ -16,12 +17,8 @@ router.get("/", (req, res) => {
     });
 });
 //CREATE NEW PRODUCT
-router.post("/", isAuthenticated, (req, res) => {
-  if (req.payload.role !== "admin") {
-    return res.status(403).json({
-      message: "Access denied, must be administrator",
-    });
-  }
+router.post("/", isAuthenticated, isAdmin, (req, res) => {
+  
   const body = req.body;
   const productDetails = {
     name: body.name,
@@ -61,13 +58,7 @@ router.get("/:productId", (req, res) => {
     });
 });
 // UPDATE PRODUCT
-router.put("/:productId", isAuthenticated, (req, res) => {
-  if (req.payload.role !== "admin") {
-    return res.status(403).json({
-      message: "Access denied, must be administrator",
-    });
-  }
-
+router.put("/:productId", isAuthenticated, isAdmin, (req, res) => {
   const { productId } = req.params;
   const body = req.body;
 
@@ -96,13 +87,7 @@ router.put("/:productId", isAuthenticated, (req, res) => {
     });
 });
 
-router.delete("/:productId", isAuthenticated, (req, res) => {
-  if (req.payload.role !== "admin") {
-    return res.status(403).json({
-      message: "Access denied, must be administrator",
-    });
-  }
-
+router.delete("/:productId", isAuthenticated, isAdmin, (req, res) => {
   const { productId } = req.params;
 
   if (!mongoose.Types.ObjectId.isValid(productId)) {
