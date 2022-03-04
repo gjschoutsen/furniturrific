@@ -65,6 +65,7 @@ router.post("/signup", (req, res) => {
         return User.create({
           username,
           password: hashedPassword,
+          email
         });
       })
       .then((user) => {
@@ -116,6 +117,7 @@ router.post("/login", (req, res, next) => {
         const payload = {
           _id: user._id,
           username: user.username,
+          role: user.role
         };
 
         const authToken = jwt.sign(payload, process.env.TOKEN_SECRET, {

@@ -1,16 +1,39 @@
 const { Schema, model } = require("mongoose");
 
 const userSchema = new Schema({
-  name: String,
-  producttype: {
-    type: String,
-    required: ["couch", "chair", "table", "lights", "Accessories"],
+  name: {
+    type:String,
+    required: true
   },
-  price: Number,
-  brand: String,
+  productType: {
+    type: String,
+
+    required: true,
+    enum: ["couch", "chair", "table", "light", "accessories"],
+  },
+  price: {
+    type: Number,
+    required: true
+  },
+  brand: {
+    type: String,
+    required: true
+  },
   image: String,
   description: String,
-  reviews: [{ type: Schema.Types.ObjectId, ref: 'Review' }],
+  // reviews: [{
+  //   reviewer: {
+  //    type: String,
+  //    required: true
+  //   },
+  // score: {
+  //  type: Number,
+  //  required: true,
+  //  min: 1,
+  //  max: 5
+  // },
+  // description: String,
+  // }]
 });
 
 const Product = model("Product", userSchema);

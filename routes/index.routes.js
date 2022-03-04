@@ -10,7 +10,7 @@ router.get("/", (req, res, next) => {
 
 router.use("/auth", authRoutes);
 router.use("/products", productsRoutes);
-router.use("/reviews", reviewsRoutes);
+// router.use("/reviews", reviewsRoutes);
 
 
 module.exports = router;

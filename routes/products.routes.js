@@ -1,12 +1,11 @@
 const router = require("express").Router();
 const Products = require("../models/Product.Model");
 const mongoose = require("mongoose");
-const {isAuthenticated} = require ("../middleware/jwt.middleware")
+const { isAuthenticated } = require("../middleware/jwt.middleware");
 
 //GET ALL PRODUCTS
 router.get("/", (req, res) => {
   Products.find()
-    .populate("reviews")
     .then((products) => res.json(products))
     .catch((err) => {
       console.log("Error getting all the products", err);
@@ -18,26 +17,31 @@ router.get("/", (req, res) => {
 });
 //CREATE NEW PRODUCT
 router.post("/", isAuthenticated, (req, res) => {
-    const body = req.body;
-    const productDetails = {
-      name: body.name,
-      producttype: body.producttype,
-      price: body.price,
-      brand: body.brand,
-      image: body.image,
-      description: body.description,
-      reviews: [],
-    };
-    Products.create(productDetails)
-      .then((createdProduct) => res.status(201).json(createdProduct))
-      .catch((err) => {
-        console.log("Error creating a new product", err);
-        res.status(500).json({
-          message: "Error creating a new product",
-          error: err,
-        });
+  if (req.payload.role !== "admin") {
+    return res.status(403).json({
+      message: "Access denied, must be administrator",
+    });
+  }
+  const body = req.body;
+  const productDetails = {
+    name: body.name,
+    productType: body.productType,
+    price: body.price,
+    brand: body.brand,
+    image: body.image,
+    description: body.description,
+    reviews: [],
+  };
+  Products.create(productDetails)
+    .then((createdProduct) => res.status(201).json(createdProduct))
+    .catch((err) => {
+      console.log("Error creating a new product", err);
+      res.status(500).json({
+        message: "Error creating a new product",
+        error: err,
       });
-  });
+    });
+});
 //GET ONE PRODUCT
 router.get("/:productId", (req, res) => {
   const { productId } = req.params;
@@ -47,7 +51,6 @@ router.get("/:productId", (req, res) => {
   }
 
   Products.findById(productId)
-    .populate("reviews")
     .then((product) => res.status(200).json(product))
     .catch((err) => {
       console.log("Error getting product", err);
@@ -58,54 +61,68 @@ router.get("/:productId", (req, res) => {
     });
 });
 // UPDATE PRODUCT
-router.put("/:productId", isAuthenticated,
-  (req, res) => {
-    const { productId } = req.params;
-    const body = req.body;
+router.put("/:productId", isAuthenticated, (req, res) => {
+  if (req.payload.role !== "admin") {
+    return res.status(403).json({
+      message: "Access denied, must be administrator",
+    });
+  }
 
-    if (!mongoose.Types.ObjectId.isValid(productId)) {
-      res.status(400).json({ message: "Specified id is not valid" });
-      return;
-    }
+  const { productId } = req.params;
+  const body = req.body;
 
-    const productDetails = {
-      name: body.name,
-      producttype: body.producttype,
-      price: body.price,
-      brand: body.brand,
-      image: body.image,
-      description: body.description,
-    };
+  if (!mongoose.Types.ObjectId.isValid(productId)) {
+    res.status(400).json({ message: "Specified id is not valid" });
+    return;
+  }
 
-    Products.findByIdAndUpdate(productId, productDetails, { new: true })
-      .then((updatedProduct) => res.json(updatedProduct))
-      .catch((err) => {
-        console.log("Error updating product", err);
-        res.status(500).json({
-          message: "Error updating product",
-          error: err,
-        });
+  const productDetails = {
+    name: body.name,
+    productType: body.productType,
+    price: body.price,
+    brand: body.brand,
+    image: body.image,
+    description: body.description,
+  };
+
+  Products.findByIdAndUpdate(productId, productDetails, { new: true })
+    .then((updatedProduct) => res.json(updatedProduct))
+    .catch((err) => {
+      console.log("Error updating product", err);
+      res.status(500).json({
+        message: "Error updating product",
+        error: err,
       });
-  });
+    });
+});
 
-router.delete("/:productId", isAuthenticated,
-  (req, res) => {
-    const { productId } = req.params;
-    
-    if (!mongoose.Types.ObjectId.isValid(productId)) {
-      res.status(400).json({ message: "Specified id is not valid" });
-      return;
-    }
+router.delete("/:productId", isAuthenticated, (req, res) => {
+  if (req.payload.role !== "admin") {
+    return res.status(403).json({
+      message: "Access denied, must be administrator",
+    });
+  }
 
-    Products.findByIdAndRemove(productId)
-      .then(() => res.json({ message: `Project with ${productId} is removed successfully.` }))
-      .catch((err) => {
-        console.log("Error deleting product", err);
-        res.status(500).json({
-          message: "Error deleting product",
-          error: err,
-        });
+  const { productId } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(productId)) {
+    res.status(400).json({ message: "Specified id is not valid" });
+    return;
+  }
+
+  Products.findByIdAndRemove(productId)
+    .then(() =>
+      res.json({
+        message: `Project with ${productId} is removed successfully.`,
+      })
+    )
+    .catch((err) => {
+      console.log("Error deleting product", err);
+      res.status(500).json({
+        message: "Error deleting product",
+        error: err,
       });
-  });
+    });
+});
 
 module.exports = router;
