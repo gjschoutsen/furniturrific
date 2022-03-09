@@ -20,13 +20,11 @@ const userSchema = new Schema({
       unique: true,
       required: true
     },
-    address:{
       street: String,
       city: String,
       state: String,
-      postalcode: String,
+      postalCode: String,
       country: String
-    },
     // favorites: [{ type: Schema.Types.ObjectId, ref: 'Product' }],
 
   },
