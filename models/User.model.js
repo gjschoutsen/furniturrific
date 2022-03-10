@@ -25,11 +25,8 @@ const userSchema = new Schema({
       state: String,
       postalCode: String,
       country: String
-    // favorites: [{ type: Schema.Types.ObjectId, ref: 'Product' }],
-
   },
   {
-    // this second object adds extra properties: `createdAt` and `updatedAt`
     timestamps: true,
   }
 );

@@ -130,7 +130,7 @@ router.post("/login", (req, res, next) => {
 
     .catch((err) => {
       next(err);
-      // return res.status(500).render("login", { errorMessage: err.message });
+      return res.status(500).render("login", { errorMessage: err.message });
     });
 });
 
